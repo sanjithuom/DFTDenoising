@@ -6,14 +6,17 @@ from brainweb import noise, T1, Res, Shape, Act
 from skimage.transform import resize
 
 
-def toPetMmr(im, pad=True, dtype=np.float32, outres="mMR", modes=None):
+# method copied from brainweb module to modify according to our requirement to visualize as an image
+def convert_to_T1(im, pad=True, dtype=np.float32, outres="MR"):
+    """
+      @param outres: attribute to use from `Res` & `Shape` classes [default: "MR"]
+      @return out  : image data as an array
+      """
     out_res = getattr(Res, outres)
     out_shape = getattr(Shape, outres)
 
     new_shape = np.rint(np.asarray(im.shape) * Res.brainweb / out_res)
     padLR, padR = divmod((np.array(out_shape) - new_shape), 2)
-
-    modes = [T1]
 
     def resizeToMmr(arr):
         arr = resize(arr, new_shape,
@@ -33,6 +36,7 @@ def toPetMmr(im, pad=True, dtype=np.float32, outres="mMR", modes=None):
     return res
 
 
+# method copied from brainweb module to modify according to our requirement to download as an image
 def volshow(vol,
             cmaps=None, colorbars=None,
             xlabels=None, ylabels=None, titles=None,
@@ -155,19 +159,24 @@ def volshow(vol,
     return plot_slice
 
 
+# source dataset files were downloaded using brainweb module
+# source dataset file used to generate image for testing
 file = 'subjects/subject_38.bin.gz'
 
+# load the raw image data
 raw_data = brainweb.load_file(file)
 
-volshow(raw_data, cmaps=['gist_ncar'])
+# convert raw data to T1 image data
+t1 = convert_to_T1(raw_data, pad=False, outres="MR")
 
-t1 = toPetMmr(raw_data, pad=False, modes=[T1], outres="MR")
-
+# show and download T1 original image
 volshow(t1, cmaps=['Greys_r'], filename='images/t1_original.png')
 
-t1Noise = 0.25
+t1Noise = 0.75
 t1Sigma = 1
 
+# add noise to T1 original image
 t1_with_noise = noise(t1, t1Noise, sigma=t1Sigma)
 
+# show and download noisy image
 volshow(t1_with_noise, cmaps=['Greys_r'], filename=f'images/t1_with_noise_{t1Noise}.png')

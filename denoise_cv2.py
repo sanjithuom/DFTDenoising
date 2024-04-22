@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-def denoise(image):
+def denoise_by_cv2(image):
     dft = cv2.dft(np.float32(image), flags=cv2.DFT_COMPLEX_OUTPUT)
 
     dft_shift = np.fft.fftshift(dft)
