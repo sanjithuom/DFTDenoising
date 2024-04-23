@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.ndimage import gaussian_filter
+from scipy import fftpack
 
 
 def wiener_filter_dft(noisy_image, noise_power, signal_power):
@@ -50,3 +52,29 @@ def estimate_noise_power(noisy_image):
 def estimate_signal_power(clean_image):
     signal_power = np.var(clean_image)
     return signal_power
+
+
+def apply_dft_and_filter(image):
+    """Denoise an image using an improved DFT approach."""
+    # Perform the DFT
+    dft_noisy = fftpack.fft2(image)
+    dft_shifted = fftpack.fftshift(dft_noisy)
+
+    # Create a frequency mask that attenuates frequencies outside the central region
+    rows, cols = image.shape
+    crow, ccol = rows // 2, cols // 2
+    mask = np.zeros((rows, cols), np.uint8)
+    r = min(rows, cols) // 4  # radius for the mask
+    center_square = np.ix_(range(crow - r, crow + r), range(ccol - r, ccol + r))
+    mask[center_square] = 1
+
+    # Apply mask in frequency domain
+    dft_filtered = dft_shifted * mask
+
+    # Shift back and inverse DFT
+    dft_ishift = fftpack.ifftshift(dft_filtered)
+    img_back = fftpack.ifft2(dft_ishift)
+    img_back = np.abs(img_back)
+
+
+    return img_back

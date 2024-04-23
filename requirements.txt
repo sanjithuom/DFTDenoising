@@ -14,7 +14,7 @@ executing==2.0.1
 fonttools==4.51.0
 idna==3.7
 imageio==2.34.0
-ipython==8.23.0
+ipython
 ipywidgets==8.1.2
 jedi==0.19.1
 jupyterlab_widgets==3.0.10
@@ -22,7 +22,7 @@ kiwisolver==1.4.5
 lazy_loader==0.4
 matplotlib==3.8.4
 matplotlib-inline==0.1.7
-networkx==3.3
+networkx
 numpy==1.26.4
 opencv-python==4.9.0.80
 packaging==24.0
@@ -35,7 +35,7 @@ pyparsing==3.1.2
 python-dateutil==2.9.0.post0
 PyWavelets==1.6.0
 requests==2.31.0
-scikit-image==0.23.2
+scikit-image
 scipy==1.13.0
 six==1.16.0
 stack-data==0.6.3
@@ -46,3 +46,5 @@ typing_extensions==4.11.0
 urllib3==2.2.1
 wcwidth==0.2.13
 widgetsnbextension==4.0.10
+
+
