@@ -38,6 +38,5 @@ def soft_thresholding_dft(image, threshold):
 
     # Ensure the denoised image is real-valued and clip values to valid intensity range [0, 255]
     denoised_image = np.real(denoised_image)
-    denoised_image = np.clip(denoised_image, 0, 255).astype(np.uint8)
 
     return denoised_image

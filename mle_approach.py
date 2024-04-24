@@ -2,8 +2,6 @@ import numpy as np
 
 
 def ml_denoising_dft(noisy_image, patch_size=3, window_size=3, sigma=1000):
-    # Compute the DFT of the noisy image
-    dft_noisy_image = np.fft.fft2(noisy_image)
 
     # Initialize denoised image
     denoised_image = np.zeros_like(noisy_image)

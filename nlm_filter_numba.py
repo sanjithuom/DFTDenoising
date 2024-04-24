@@ -4,6 +4,14 @@ import numpy as np
 
 @jit(nopython=True)
 def make_kernel(f):
+    """
+    Create a kernel for weighted averaging in Non-Local Means (NLM) denoising.
+    Parameters:
+    f (int): The size of the filter window. Higher values result in more smoothing.
+
+    Returns:
+        numpy.ndarray: A kernel for weighted averaging.
+    """
     kernel = np.zeros((2 * f + 1, 2 * f + 1))
     for d in range(1, f + 1):
         value = 1 / (2 * d + 1) ** 2
@@ -16,6 +24,16 @@ def make_kernel(f):
 
 @jit(nopython=True)
 def pad_image(input_image, pad_width):
+    """
+    Pad the input image with zeros around its borders.
+
+    Parameters:
+        input_image (numpy.ndarray): The input grayscale image to be padded.
+        pad_width (int): The width of the padding around the image borders.
+
+    Returns:
+        numpy.ndarray: The padded image.
+    """
     m, n = input_image.shape
     padded_image = np.zeros((m + 2 * pad_width, n + 2 * pad_width))
     # Copy original image into center
@@ -33,6 +51,18 @@ def pad_image(input_image, pad_width):
 
 @jit(nopython=True)
 def fast_NLmeansfilter(input_image, t=3, f=5, h=10):
+    """
+    Apply Non-Local Means (NLM) denoising to the input image.
+
+    Parameters:
+        input_image (numpy.ndarray): The input grayscale image to be denoised.
+        t (int, optional): The search window radius. Default is 3.
+        f (int, optional): The size of the filter window. Default is 5.
+        h (int, optional): The smoothing parameter. Default is 10.
+
+    Returns:
+        numpy.ndarray: The denoised image.
+    """
     m, n = input_image.shape
     output = np.zeros((m, n))
     padded_input = pad_image(input_image, f)

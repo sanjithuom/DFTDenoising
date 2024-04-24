@@ -1,86 +1,79 @@
 import numpy as np
 
 
-def get_window(img, x, y, N=25):
+def make_kernel(f):
     """
-    Extracts a small window of input image, around the center (x,y)
-    img - input image
-    x,y - cordinates of center
-    N - size of window (N,N) {should be odd}
+    Create a kernel for weighted averaging in Non-Local Means (NLM) denoising.
+    Parameters:
+    f (int): The size of the filter window. Higher values result in more smoothing.
+
+    Returns:
+        numpy.ndarray: A kernel for weighted averaging.
     """
+    kernel = np.zeros((2 * f + 1, 2 * f + 1))
+    for d in range(1, f + 1):
+        value = 1 / (2 * d + 1) ** 2
+        for i in range(-d, d + 1):
+            for j in range(-d, d + 1):
+                kernel[f - i, f - j] += value
+    kernel /= f
 
-    h, w, c = img.shape  # Extracting Image Dimensions
-
-    arm = N // 2  # Arm from center to get window
-    window = np.zeros((N, N, c))
-    # print((0, x-arm))
-    xmin = max(0, x - arm)
-    xmax = min(w, x + arm + 1)
-    ymin = max(0, y - arm)
-    ymax = min(h, y + arm + 1)
-
-    window[arm - (y - ymin):arm + (ymax - y), arm - (x - xmin)
-                                              :arm + (xmax - x)] = img[ymin:ymax, xmin:xmax]
-
-    return window
+    return kernel
 
 
-# The main function
-def NL_means(img, h=10, f=4, t=11):
-    # neighbourhood size 2f+1
-    N = 2 * f + 1
+def nlm_denoise(input_image, t=3, f=5, h=10):
+    """
+    Apply Non-Local Means (NLM) denoising to the input image.
 
-    # sliding window size 2t+1
-    S = 2 * t + 1
+    Parameters:
+        input_image (numpy.ndarray): The input grayscale image to be denoised.
+        t (int, optional): The search window radius. Default is 3.
+        f (int, optional): The size of the filter window. Default is 5.
+        h (int, optional): The smoothing parameter. Default is 10.
 
-    # Filtering Parameter
-    sigma_h = h
+    Returns:
+        numpy.ndarray: The denoised image.
+    """
+    m, n = input_image.shape
+    output = np.zeros((m, n))
+    padded_input = np.pad(input_image, f, mode='edge')
+    kernel = make_kernel(f)
+    h = h * h
 
-    # Padding the image
-    pad_img = np.pad(img, t + f)
+    for i in range(m):
+        for j in range(n):
+            i1, j1 = i + f, j + f
+            W1 = padded_input[i1 - f:i1 + f + 1, j1 - f:j1 + f + 1]
+            wmax = 0
+            average = 0
+            sweight = 0
 
-    # Getting the height and width of the image
-    h, w = img.shape
-    h_pad, w_pad = pad_img.shape
+            rmin = max(i1 - t, f)
+            rmax = min(i1 + t, m + f - 1)
+            smin = max(j1 - t, f)
+            smax = min(j1 + t, n + f - 1)
 
-    neigh_mat = np.zeros((h + S - 1, w + S - 1, N, N))
+            for r in range(rmin, rmax + 1):
+                for s in range(smin, smax + 1):
+                    if r == i1 and s == j1:
+                        continue
+                    W2 = padded_input[r - f:r + f + 1, s - f:s + f + 1]
+                    if W2.shape != (2 * f + 1, 2 * f + 1) or W1.shape != W2.shape:
+                        continue
+                    d = np.sum(kernel * (W1 - W2) ** 2)
+                    w = np.exp(-d / h)
 
-    # Making a dp neighbourhood for all pixels (used for vectorizing sliding window algorithm)
-    for y in range(h + S - 1):
-        for x in range(w + S - 1):
-            neigh_mat[y, x] = np.squeeze(get_window(
-                pad_img[:, :, np.newaxis], x + f, y + f, 2 * f + 1))
+                    if w > wmax:
+                        wmax = w
+                    sweight += w
+                    average += w * padded_input[r, s]
 
-    # Empty image to be filled by the algorithm
-    output = np.zeros(img.shape)
+            average += wmax * padded_input[i1, j1]
+            sweight += wmax
 
-    # Iterating for each pixel
-    for Y in range(h):
-        for X in range(w):
-            # Shifting for padding
-            x = X + t
-            y = Y + t
-            # Getting neibourhood in chunks of search window
-            a = get_window(np.reshape(
-                neigh_mat, (h + S - 1, w + S - 1, N * N)), x, y, S)
-
-            # Getting self Neigbourhood
-            b = neigh_mat[y, x].flatten()
-
-            # Getting distance of vectorized neibourhood
-            c = a - b
-
-            # Determining weights
-            d = c * c
-            e = np.sqrt(np.sum(d, axis=2))
-            F = np.exp(-e / (sigma_h * sigma_h))
-
-            # Summing weights
-            Z = np.sum(F)
-
-            # Calculating average pixel value
-            im_part = np.squeeze(get_window(pad_img[:, :, None], x + f, y + f, S))
-            NL = np.sum(F * im_part)
-            output[Y, X] = NL / Z
+            if sweight > 0:
+                output[i, j] = average / sweight
+            else:
+                output[i, j] = input_image[i, j]
 
     return output
