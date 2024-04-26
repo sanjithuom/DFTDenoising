@@ -2,7 +2,7 @@ import numpy as np
 
 
 def post_process_image(image):
-    """Post processing to display DFTs and IDFTs
+    """Post processing to display DFTs
     Parameters:
         image (numpy.ndarray): Input image (grayscale).
 
