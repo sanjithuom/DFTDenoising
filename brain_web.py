@@ -161,7 +161,7 @@ def volshow(vol,
 
 # source dataset files were downloaded using brainweb module
 # source dataset file used to generate image for testing
-file = 'subjects/subject_38.bin.gz'
+file = 'subjects/subject_20.bin.gz'
 
 # load the raw image data
 raw_data = brainweb.load_file(file)
@@ -170,13 +170,4 @@ raw_data = brainweb.load_file(file)
 t1 = convert_to_T1(raw_data, pad=False, outres="MR")
 
 # show and download T1 original image
-volshow(t1, cmaps=['Greys_r'], filename='images/t1_original.png')
-
-t1Noise = 0.75
-t1Sigma = 1
-
-# add noise to T1 original image
-t1_with_noise = noise(t1, t1Noise, sigma=t1Sigma)
-
-# show and download noisy image
-volshow(t1_with_noise, cmaps=['Greys_r'], filename=f'images/t1_with_noise_{t1Noise}.png')
+volshow(t1, cmaps=['Greys_r'], filename='images/t1_original_20.png')

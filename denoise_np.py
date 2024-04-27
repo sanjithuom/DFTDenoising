@@ -32,14 +32,29 @@ def post_process_image(image):
     return stretched_image.astype(np.uint8)
 
 
-def denoise_by_np(image, sigma=40):
+def stretch_image(image):
+    stretched_image = image
+
+    # find min max value
+    min_value = np.min(stretched_image)
+    max_value = np.max(stretched_image)
+
+    # Stretch the image to [0,255]
+    stretched_image = ((stretched_image - min_value) / (max_value - min_value)) * 255.0
+    stretched_image = np.clip(stretched_image, 0, 255)
+
+    return stretched_image
+
+
+def denoise_by_np(image, sigma=50, radius=10, alpha=0.05):
     """
        Denoises the input image using frequency domain filtering with NumPy using circular mask.
 
        Parameters:
            image (numpy.ndarray): The input image.
-           sigma: Adjust sigma to control the smoothness of the decline of mask
-
+           sigma: Adjust sigma to control the smoothness of the decline of mask. Default is 50
+           radius: Radius near the zero frequency to emphasize. Default is 10.
+           alpha: Factor by which region near zero freq should be magnified. Alpha is 0.05.
        Returns:
            numpy.ndarray: The denoised image.
        """
@@ -63,10 +78,17 @@ def denoise_by_np(image, sigma=40):
     mask_area = x ** 2 + y ** 2 <= r ** 2
     mask_value = np.exp(-(x ** 2 + y ** 2) / (2 * sigma ** 2))  # Gaussian function
     mask[mask_area] = mask_value[mask_area]
+    # non - circular region
+    mask[~mask_area] = 0.05
+
+    # add more importance to closer to zero frequency
+    zero_freq_neighborhood = x ** 2 + y ** 2 <= radius ** 2
+    mask[zero_freq_neighborhood] *= (1 + alpha)
 
     # Apply the mask to the shifted FFT
     dft_shift[:, :] *= mask
 
+    # dft_shift = stretch_image(dft_shift)
     # Inverse shift to bring zero frequency components back to the corners
     dft_ishift = np.fft.ifftshift(dft_shift)
 
