@@ -13,9 +13,8 @@ from soft_thresholding import soft_thresholding_dft
 
 denois_methods = [denoise_by_cv2, denoise_by_np, wiener_filter_dft, soft_thresholding_dft, ml_denoising_dft,
                   denoise_nl_means, fast_NLmeansfilter]
-estimate_signal_power, estimate_noise_power
 
-image_id = '53'
+image_id = '38'
 
 original_image = cv2.imread(f'images/t1_original_{image_id}.png', cv2.IMREAD_GRAYSCALE)
 
@@ -68,6 +67,8 @@ psnr_noisy_value = psnr(original_image=original_image, denoised_image=noisy_imag
 # parameters for different algorithms to be used
 sigma_est = np.mean(estimate_sigma(noisy_image_as_float))
 signal_power = np.mean(estimate_sigma(original_image_as_float))
+noise_power_wiener = estimate_noise_power(noisy_image)
+signal_power_wiener = estimate_signal_power(noisy_image)
 
 # state of the art function NLM filter
 state_of_the_art_function = lambda image: denoise_nl_means(
@@ -76,36 +77,40 @@ state_of_the_art_function = lambda image: denoise_nl_means(
 
 # denoise functions
 denoise_function = lambda image: denoise_by_np(image, sigma=65)
+denoise_function_wiener = lambda image: wiener_filter_dft(image, noise_power_wiener, signal_power_wiener)
 denoise_function_nlm_custom = lambda image: fast_NLmeansfilter(image, t=5, f=7, h=0.8 * sigma_est)
 
 # call denoise function to get the denoised image
 denoised_image = denoise_function(noisy_image_as_float)
+denoised_image_wiener = denoise_function_wiener(noisy_image_as_float)
 denoised_image_nlm_custom = denoise_function_nlm_custom(noisy_image_as_float)
+
 # call denoise function using state of the art method to get the denoised image
 denoised_image_sota = state_of_the_art_function(noisy_image_as_float)
 
 # calculate the psnr value of noisy image, denoised image, denoised image using state of the art method
 psnr_denoised_value = psnr(original_image=original_image_as_float, denoised_image=denoised_image)
+psnr_denoised_value_wiener = psnr(original_image=original_image_as_float, denoised_image=denoised_image_wiener)
 psnr_denoised_value_nlm_custom = psnr(original_image=original_image_as_float, denoised_image=denoised_image_nlm_custom)
 psnr_denoised_value_sota = psnr(original_image=original_image_as_float, denoised_image=denoised_image_sota)
 
 print(f'================== Image id: {image_id} ===========================')
 print(f'psnr noisy value: {psnr_noisy_value}')
 print(f'psnr denoised value (DFT Masking): {psnr_denoised_value}')
+print(f'psnr denoised value (Wiener): {psnr_denoised_value_wiener}')
 print(f'psnr denoised value (NLM Custom): {psnr_denoised_value_nlm_custom}')
 print(f'psnr denoised value (State of the art): {psnr_denoised_value_sota}')
 print(f'===========================================================')
 # show all the images
 cv2.imshow('Original Image', original_image)
 cv2.imshow('Noisy Image', noisy_image)
-# cv2.imshow('Denoised Image (DFT Masking)', denoised_image)
-# cv2.imshow('Denoised Image (NLM Custom)', denoised_image_nlm_custom)
-# cv2.imshow('Denoised Image (State of the Art)', denoised_image_sota)
 
 cv2.imwrite(f'images/{image_id}/t1_noisy_{image_id}.png', noisy_image)
 
 show_and_save_denoised_image(denoised_image, title='Denoised Image (DFT Masking)',
                              filename=f'images/{image_id}/t1_denoised_dft_masking_{image_id}.png')
+show_and_save_denoised_image(denoised_image_wiener, title='Denoised Image (Wiener)',
+                             filename=f'images/{image_id}/t1_denoised_wiener_{image_id}.png')
 show_and_save_denoised_image(denoised_image_nlm_custom, title='Denoised Image (NLM Custom)',
                              filename=f'images/{image_id}/t1_denoised_nlm_custom_{image_id}.png')
 show_and_save_denoised_image(denoised_image_sota, title='Denoised Image (State of the Art)',
@@ -115,6 +120,7 @@ show_and_save_denoised_image(denoised_image_sota, title='Denoised Image (State o
 show_dft(original_image_as_float, 'Original Image DFT')
 show_dft(noisy_image_as_float, 'Noisy Image DFT')
 show_dft(denoised_image, 'Denoised Image DFT (DFT Masking)')
+show_dft(denoised_image_wiener, 'Denoised Image DFT (Wiener)')
 show_dft(denoised_image_nlm_custom, 'Denoised Image DFT (NLM Custom)')
 show_dft(denoised_image_sota, 'Denoised Image DFT (State of the Art)')
 
